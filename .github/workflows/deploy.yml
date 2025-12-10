@@ -15,28 +15,28 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKER_USER }}
-        password: ${{ secrets.DOCKER_PASS }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_USER }}/fastapi-cicd:latest ./app
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd:latest ./app
 
     - name: Push Docker image
-      run: docker push ${{ secrets.DOCKER_USER }}/fastapi-cicd:latest
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd:latest
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Deploy to VM using SSH
+    - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_SSH_KEY }}
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          sudo docker pull ${{ secrets.DOCKER_USER }}/fastapi-cicd:latest
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd:latest
           sudo docker stop fastapi-app || true
           sudo docker rm fastapi-app || true
-          sudo docker run -d --name fastapi-app -p 8000:8000 ${{ secrets.DOCKER_USER }}/fastapi-cicd:latest
+          sudo docker run -d --name fastapi-app -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-cicd:latest
